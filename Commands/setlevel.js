@@ -24,11 +24,17 @@ module.exports = {
   ],
 
   async run(bot, message, args, db) {
+    const { guild } = message;
     let state = args.getString("state");
     if (state !== "on" && state !== "off")
       return bot.function.reply.error(message, "State must be `on` or `off`");
     if (state === "off") {
-      db.query(bot.queries.editLevelChannel(message.guild.id, "false"));
+      await db.Guild.updateOne(
+        { guildID: guild.id },
+        { levelChannelID: "false" }
+      );
+      bot.log.query("write", "updating level channel id");
+
       await bot.function.reply.success(message, "Level is disabled");
     } else {
       let channel = args.getChannel("channel");
@@ -37,9 +43,13 @@ module.exports = {
           message,
           "Missing a channel to deploy the level"
         );
-      channel = message.guild.channels.cache.get(channel.id);
+      channel = guild.channels.cache.get(channel.id);
       if (!channel) bot.function.reply.error(message, "No such channel");
-      db.query(bot.queries.editLevelChannel(message.guildId, channel.id));
+      await db.Guild.updateOne(
+        { guildID: guild.id },
+        { levelChannelID: channel.id }
+      );
+      bot.log.query("write", "updating level channel id");
 
       await bot.function.reply.success(
         message,

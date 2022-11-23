@@ -1,8 +1,8 @@
 const Discord = require("discord.js");
 
 module.exports = {
-  name: "addrole",
-  description: "Add custom reaction role",
+  name: "addmainrole",
+  description: "Add main role ",
   permission: Discord.PermissionFlagsBits.ManageRoles,
   dm: false,
   category: "Administration",
@@ -44,32 +44,34 @@ module.exports = {
           "I don't have permission for that"
         );
       let req = await db.Guild.findOne({ guildID: guildId });
-      bot.log.query("read", "reading Guild " + guildId);
-      let reactionRoles = req?.reactionRoles || [];
-      const newRole = {
+      bot.log.query("read", "Reading Guild " + guildId);
+
+      let mainRoles = req?.mainRoles || [];
+      let newRole = {
         roleID: role.id,
         description: description || "No description",
         emoji: emoji,
       };
 
-      var foundRole = reactionRoles?.findIndex((x) => x?.roleID == role?.id);
+      var foundRole = mainRoles?.findIndex((x) => x?.roleID == role?.id);
       let word;
       if (foundRole === -1 || foundRole === undefined) {
-        reactionRoles.push(newRole);
+        mainRoles.push(newRole);
         word = "added";
       } else {
-        reactionRoles[foundRole] = newRole;
+        mainRoles[foundRole] = newRole;
         word = "edited";
       }
 
-      await db.Guild.updateOne(
+      await bot.db.Guild.updateOne(
         { guildID: guildId },
-        { reactionRoles: reactionRoles }
+        { mainRoles: mainRoles }
       );
       bot.log.query("write", "UPDATING Guild " + guildId);
+
       return bot.function.reply.success(
         message,
-        `Role succesfully ${word}! We currently have ${reactionRoles?.length} role(s)`
+        `Main role succesfully ${word}! We currently have ${mainRoles?.length}  main role(s)`
       );
     } catch (err) {
       console.log(err);

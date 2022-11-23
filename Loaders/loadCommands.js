@@ -1,6 +1,8 @@
 const fs = require("fs");
 
 module.exports = async (bot) => {
+  bot.log.warning(`Loading Commands`);
+
   fs.readdirSync("./Commands")
     .filter((f) => f.endsWith(".js"))
     .forEach(async (file) => {
@@ -10,6 +12,6 @@ module.exports = async (bot) => {
           `The command ${file.slice(0, file.length - 3)} has no name.`
         );
       bot.commands.set(command.name, command);
-      console.log(`Command ${file} successfuly loaded`);
+      bot.log.success(`/${file.replace(".js", "")}`);
     });
 };

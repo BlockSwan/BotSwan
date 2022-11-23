@@ -10,14 +10,16 @@ module.exports = {
   options: [],
 
   async run(bot, message, args, db) {
-    db.query(bot.queries.getGuild(message.guildId), async (err, guildData) => {
-      let modal = SuggestionModal();
-      if (guildData?.length < 1 || guildData[0].suggest === "false") {
-        return bot.function.reply.error(
-          message,
-          "Suggestion not `on`, please refer to `/setsuggest` if you are the server owner"
-        );
-      } else message.showModal(modal);
-    });
+    const { guildId } = message;
+    let guildData = await db.Guild.findOne({ guildID: guildId });
+    bot.log.query("read", "READING Guild " + guildId);
+
+    let modal = SuggestionModal();
+    if (!guildData || guildData?.suggestChannelID === "false") {
+      return bot.function.reply.error(
+        message,
+        "Suggestion not `on`, please refer to `/setsuggest` if you are the server owner"
+      );
+    } else message.showModal(modal);
   },
 };

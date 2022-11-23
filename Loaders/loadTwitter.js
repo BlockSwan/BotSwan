@@ -9,17 +9,16 @@ module.exports = async (bot) => {
   async function sendMessage(tweet, bot) {
     const url = "https://twitter.com/user/status/" + tweet?.id;
     db = bot.db;
-    db.query(bot.queries.getAllTwitterChannels(), async (err, res) => {
-      console.log(res);
-      try {
-        for (let i = 0; i < res?.length; i++) {
-          const channel = await bot.channels.fetch(res[i]?.twitter);
-          channel.send(url);
-        }
-      } catch (err) {
-        console.error(err);
+    let res = await db.Guild.getTwitterChannels();
+
+    try {
+      for (let i = 0; i < res?.length; i++) {
+        const channel = await bot.channels.fetch(res[i]?._id);
+        channel.send(url);
       }
-    });
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   async function listenForever(streamFactory, dataConsumer) {
@@ -46,14 +45,14 @@ module.exports = async (bot) => {
       "media.fields": ["url"],
     };
     try {
-      console.log("Setting up Twitter...");
+      bot.log.warning("Setting up Twitter...");
       const body = {
         add: [
           { value: "from:" + process.env.TWITTER_USERNAME, tag: "from Me!!" },
         ],
       };
       const r = await T.post("tweets/search/stream/rules", body);
-      console.log(r);
+      //console.log(r);
     } catch (err) {
       console.log(err);
     }
@@ -64,6 +63,7 @@ module.exports = async (bot) => {
     );
   }
 
-  loadTwitter();
-  console.log("Twitter Ready");
+  loadTwitter().then(() => {
+    bot.log.success("Connected to Twitter");
+  });
 };

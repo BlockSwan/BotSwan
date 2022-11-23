@@ -35,28 +35,23 @@ module.exports = {
       required: false,
       autocomplete: false,
     },
-    {
-      type: "role",
-      name: "everyone",
-      description: "The everyone role",
-      required: false,
-      autocomplete: false,
-    },
   ],
 
   async run(bot, message, args, db) {
+    const { guildId, guild } = message;
     let state = args.getString("state");
     if (state !== "on" && state !== "off")
       return bot.function.reply.error(message, "State must be `on` or `off`");
     if (state === "off") {
-      db.query(
-        bot.queries.editTicketChannels(
-          message.guild.id,
-          "false",
-          "false",
-          "false"
-        )
+      await db.Guild.updateOne(
+        { guildID: guildId },
+        {
+          openTicketChannelID: "false",
+          transcriptChannelID: "false",
+          parentTicketChannelID: "false",
+        }
       );
+      bot.log.query("write", "Writing to Guild " + guildId);
       await bot.function.reply.success(message, "Tickets are disabled");
     } else {
       let ticket = args.getChannel("ticket");
@@ -65,7 +60,7 @@ module.exports = {
           message,
           "Missing a channel to create the tickets"
         );
-      ticket = await message.guild.channels.cache.get(ticket.id);
+      ticket = await guild.channels.cache.get(ticket.id);
       if (!ticket || ticket.type !== 0)
         return bot.function.reply.error(message, "No  such channel");
 
@@ -75,7 +70,7 @@ module.exports = {
           message,
           "Missing a channel to create the transcripts"
         );
-      transcript = message.guild.channels.cache.get(transcript.id);
+      transcript = guild.channels.cache.get(transcript.id);
       if (!transcript || transcript.type !== 0)
         return bot.function.reply.error(message, "No  such channel");
 
@@ -85,32 +80,25 @@ module.exports = {
           message,
           "Missing a category to create the tickets channel"
         );
-      parentTicket = message.guild.channels.cache.get(parentTicket.id);
+      parentTicket = guild.channels.cache.get(parentTicket.id);
       if (!parentTicket || parentTicket.type !== 4)
         return bot.function.reply.error(message, "No such parent channel");
 
-      let everyone = args.getRole("everyone");
-      if (!everyone)
-        return bot.function.reply.error(message, "Missing the everyone role");
-
-      console.log(
-        message.guild.roles.everyone.id,
-        typeof message.guild.roles.everyone.id
+      let everyoneRoleID = guild.roles.everyone.id;
+      await db.Guild.updateOne(
+        { guildID: guildId },
+        {
+          openTicketChannelID: ticket.id,
+          transcriptChannelID: transcript.id,
+          parentTicketChannelID: parentTicket.id,
+          everyoneRoleID: everyoneRoleID,
+        }
       );
-
-      db.query(
-        bot.queries.editTicketChannels(
-          message.guild.id,
-          ticket.id,
-          transcript.id,
-          parentTicket.id,
-          message.guild.roles.everyone.id
-        )
-      );
+      bot.log.query("write", "Writing to Guild " + guildId);
 
       await bot.function.reply.success(
         message,
-        `Ticketing is enable in with the following channel:\n Create ticket: ${ticket}\nTranscripts: ${transcript}\n Ticket parent: ${parentTicket}`
+        `Ticketing is enable with the following channel:\n Create ticket: ${ticket}\nTranscripts: ${transcript}\n Ticket parent: ${parentTicket}`
       );
     }
   },

@@ -1,15 +1,27 @@
 require("dotenv").config();
+const mongoose = require("mongoose");
+const fs = require("fs");
 
-const mysql = require("mysql");
+module.exports = async (bot) => {
+  bot.log.warning("Loading Database");
 
-module.exports = async () => {
-  let db = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PWD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
+  await mongoose.connect(process.env.MONGODB_URL || "", {
+    keepAlive: true,
   });
 
-  return db;
+  if (mongoose.connect) {
+    bot.log.success("MongoDB connected!");
+    bot.log.warning("Loading Models & queries");
+    bot.db = {};
+    fs.readdirSync("./Models")
+      .filter((f) => f.endsWith(".js"))
+      .forEach(async (file) => {
+        let name = file.replace(".js", "");
+        let mgdb = require(`../Models/${file}`);
+        bot.db[name] = mgdb;
+        bot.log.success(`${file.replace(".js", "")}`);
+      });
+  } else {
+    bot.log.error("Failed connecting to MongoDB");
+  }
 };

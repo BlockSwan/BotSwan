@@ -1,3 +1,7 @@
 .env
-node-modules
+node_modules/
 .DS_Store
+.swp
+*.env
+*.swp
+*.DS_Store

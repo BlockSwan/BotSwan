@@ -3,55 +3,55 @@ const { MAX_XP_PER_MSG, XP_TO_LVL } = require("../constants");
 
 module.exports = async (bot, message) => {
   let db = bot.db;
+  const { author, guild, channel } = message;
 
-  if (message.author.bot || message.channel.type === Discord.ChannelType.DM)
-    return;
+  if (author.bot || channel.type === Discord.ChannelType.DM) return;
 
-  db.query(
-    bot.function.queries.getGuild(message.guild.id),
-    async (err, serverData) => {
-      if (serverData?.length < 1) {
-        db.query(bot.function.queries.initGuild(message.guild.id));
-      }
-      db.query(
-        bot.function.queries.getUser(message.author.id, message.guildId),
-        async (err, user) => {
-          if (user?.length < 1) {
-            let ID = await bot.function.createID("USER");
-            db.query(
-              bot.function.queries.initUser(
-                ID,
-                message.author.id,
-                message.guildId
-              )
-            );
-          } else {
-            let xpToGive = Math.floor(Math.random() * MAX_XP_PER_MSG);
-            db.query(
-              bot.function.queries.addXp(
-                message.author.id,
-                message.guildId,
-                parseInt(user[0].xp) + xpToGive
-              )
-            );
+  let guildData = await db.Guild.findOne({
+    guildID: guild.id,
+  });
+  bot.log.query("read", "Reading Guild " + guild.id);
 
-            let curr_lvl = XP_TO_LVL(user[0].xp);
-            let newUserXp = parseInt(user[0].xp) + xpToGive;
-            let xp = bot.function.calculXp(newUserXp);
+  if (!guildData) {
+    await db.Guild.initGuild(guild);
+    bot.log.query("write", "Adding Guild");
+  }
 
-            if (xp.lvl > curr_lvl && serverData[0].level !== "false") {
-              let levelChannel = await message.guild.channels.cache.get(
-                serverData[0].level
-              );
-              if (levelChannel) {
-                await levelChannel.send(
-                  `GG ${message.author}! You are now level \`${xp.lvl}\` and cumulating \`${xp.xp.current}\`xp`
-                );
-              }
-            }
-          }
-        }
+  let user = await db.User.findOne({
+    discordID: author.id,
+    guildID: guild.id,
+  });
+  bot.log.query("read", "Reading Guild " + guild.id);
+
+  if (!user) {
+    await db.User.create({
+      discordID: author.id,
+      guildID: guild.id,
+    });
+    bot.log.query("write", "CREATING NEW USER" + author.id);
+  } else {
+    let xpToGive = Math.floor(Math.random() * MAX_XP_PER_MSG);
+    await db.XP.create({
+      discordID: author.id,
+      guildID: guild.id,
+      xp: xpToGive,
+    });
+    bot.log.query("write", "CREATING NEW XP ROW FOR USER " + author.id);
+
+    let sumXP = await db.XP.getUserXP(user.discordID, guild.id);
+    bot.log.query("read", "READING TOTAL XP FOR " + author.id);
+    let currentLVL = XP_TO_LVL(sumXP);
+    let previousLVL = XP_TO_LVL(sumXP - xpToGive);
+    let xp = bot.function.calculXp(sumXP);
+    if (currentLVL > previousLVL && guildData?.levelChannelID !== "false") {
+      let levelChannel = await guild.channels.cache.get(
+        guildData.levelChannelID
       );
+      if (levelChannel) {
+        await levelChannel.send(
+          `GG ${author}! You are now level \`${xp.lvl}\` and cumulating \`${xp.xp.current}\`xp`
+        );
+      }
     }
-  );
+  }
 };

@@ -3,17 +3,16 @@ const SuggestionModal = require("../../Components/Modals/Suggestion");
 
 module.exports = {
   async run(bot, interaction, db) {
-    db.query(
-      bot.queries.getGuild(interaction.guildId),
-      async (err, guildData) => {
-        let modal = SuggestionModal();
-        if (guildData?.length < 1 || guildData[0].suggest === "false") {
-          return bot.function.reply.error(
-            interaction,
-            "Suggestion not `on`, please refer to `/setsuggest` if you are the server owner"
-          );
-        } else interaction.showModal(modal);
-      }
-    );
+    const { guildId } = interaction;
+    let guildData = await db.Guild.findOne({ guildID: guildId });
+    bot.log.query("read", "reading  Guild " + guildId);
+
+    let modal = SuggestionModal();
+    if (!guildData || guildData.suggestChannelID === "false") {
+      return bot.function.reply.error(
+        interaction,
+        "Suggestion not `on`, please refer to `/setsuggest` if you are the server owner"
+      );
+    } else interaction.showModal(modal);
   },
 };

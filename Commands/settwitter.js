@@ -24,11 +24,18 @@ module.exports = {
   ],
 
   async run(bot, message, args, db) {
+    const { guild, guildId } = message;
     let state = args.getString("state");
     if (state !== "on" && state !== "off")
       return bot.function.reply.error(message, "State must be `on` or `off`");
     if (state === "off") {
-      db.query(bot.queries.editTwitterChannel(message.guild.id, "false"));
+      await db.Guild.updateOne(
+        { guildID: guildId },
+        {
+          twitterChannelID: "false",
+        }
+      );
+      bot.log.query("write", "Writing to Guild " + guildId);
       await bot.function.reply.success(message, "Twitter is disabled");
     } else {
       let channel = args.getChannel("channel");
@@ -37,9 +44,15 @@ module.exports = {
           message,
           "Missing a channel to deploy the twitter"
         );
-      channel = message.guild.channels.cache.get(channel.id);
+      channel = guild.channels.cache.get(channel.id);
       if (!channel) bot.function.reply.error(message, "No such channel");
-      db.query(bot.queries.editTwitterChannel(message.guildId, channel.id));
+      await db.Guild.updateOne(
+        { guildID: guildId },
+        {
+          twitterChannelID: channel.id,
+        }
+      );
+      bot.log.query("write", "Writing to Guild " + guildId);
 
       await bot.function.reply.success(
         message,

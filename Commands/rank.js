@@ -18,72 +18,60 @@ module.exports = {
   ],
 
   async run(bot, message, args, db) {
+    const { guild, guildId } = message;
     let user;
     if (args.getUser("member")) {
       user = args.getUser("member");
-      if (!user || !message.guild.members.cache.get(user?.id)) {
+      if (!user || !guild.members.cache.get(user?.id)) {
         return message.reply("No member");
       }
     } else user = message.user;
 
-    db.query(
-      bot.queries.getGuild(message.guildId),
-      async (err, currentGuild) => {
-        const levelChannel = bot.channels.cache.get(currentGuild[0].level);
+    let guildData = await db.Guild.findOne({ guildID: guildId });
+    bot.log.query("read", "READing Guild " + guildId);
 
-        if (currentGuild[0].level !== message.channel.id) {
-          return bot.function.reply.error(
-            message,
-            levelChannel
-              ? `You can't use \`/rank\` in this channel. Please try again in ${levelChannel}`
-              : `This command is not allowed. Server Master must configure it with \`/setlevel\` `
-          );
-        } else {
-          db.query(
-            bot.queries.getUser(user.id, message.guildId),
-            async (err, userXp) => {
-              if (userXp?.length < 1)
-                return message.reply("This member has `0 xp`");
-              await message.deferReply();
+    const levelChannel = bot.channels.cache.get(guildData.levelChannelID);
 
-              db.query(
-                bot.queries.getAllUsers(message.guildId),
-                async (err, AllUsersXp) => {
-                  const leaderboard = AllUsersXp.sort(function (a, b) {
-                    return parseFloat(b.xp) - parseFloat(a.xp);
-                  });
+    if (levelChannel?.id !== message.channel.id) {
+      return bot.function.reply.error(
+        message,
+        levelChannel
+          ? `You can't use \`/rank\` in this channel. Please try again in ${levelChannel}`
+          : `This command is not allowed. Server Master must configure it with \`/setlevel\` `
+      );
+    } else {
+      let userXP = await db.XP.getUserXP(user.id, guild.id);
 
-                  let rank =
-                    leaderboard.findIndex((r) => r.discord_id === user.id) + 1;
+      bot.log.query("read", "READing USER " + user.id);
 
-                  let Stats = bot.function.calculXp(userXp[0].xp);
+      if (!userXP) return message.reply("This member has `0 xp`");
+      await message.deferReply();
 
-                  let Card = await new Rank()
-                    .setBackground("/Assets/imgs/rank_background.png")
-                    .setBot(bot)
-                    .setColorFont("#000000")
-                    .setRank(rank)
-                    .setUser(user)
-                    .setColorProgressBar("#83f28f")
-                    .setGuild(message.guild)
-                    .setXp(Stats.xp.gained)
-                    .setLevel(Stats.lvl)
-                    .setXpNeed(Stats.xp.needed)
-                    .toCard();
+      let userRank = await db.XP.getUserRank(user.id, guildId);
+      bot.log.query("read", "READing USER RANK FOR " + user.id);
 
-                  await message.followUp({
-                    files: [
-                      new Discord.AttachmentBuilder(Card.toBuffer(), {
-                        name: "rank.png",
-                      }),
-                    ],
-                  });
-                }
-              );
-            }
-          );
-        }
-      }
-    );
+      let Stats = bot.function.calculXp(userXP);
+
+      let Card = await new Rank()
+        .setBackground("/Assets/imgs/rank_background.png")
+        .setBot(bot)
+        .setColorFont("#000000")
+        .setRank(userRank)
+        .setUser(user)
+        .setColorProgressBar("#83f28f")
+        .setGuild(guild)
+        .setXp(Stats.xp.gained)
+        .setLevel(Stats.lvl)
+        .setXpNeed(Stats.xp.needed)
+        .toCard();
+
+      await message.followUp({
+        files: [
+          new Discord.AttachmentBuilder(Card.toBuffer(), {
+            name: "rank.png",
+          }),
+        ],
+      });
+    }
   },
 };

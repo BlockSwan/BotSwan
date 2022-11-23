@@ -4,6 +4,7 @@ const { Routes } = require("discord.js");
 
 module.exports = async (bot) => {
   let commands = [];
+  bot.log.warning("Loading Slash Commands");
 
   bot.commands.forEach(async (command) => {
     let slashcommand = new Discord.SlashCommandBuilder()
@@ -50,5 +51,5 @@ module.exports = async (bot) => {
   const rest = new REST({ version: "10" }).setToken(bot.token);
 
   await rest.put(Routes.applicationCommands(bot.user.id), { body: commands });
-  console.log("Slash commands are successfuly created");
+  bot.log.success("Slash commands are successfuly created");
 };

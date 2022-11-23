@@ -24,11 +24,16 @@ module.exports = {
   ],
 
   async run(bot, message, args, db) {
+    const { guildId, guild } = message;
     let state = args.getString("state");
     if (state !== "on" && state !== "off")
       return bot.function.reply.error(message, "State must be `on` or `off`");
     if (state === "off") {
-      db.query(bot.queries.editSuggestionChannel(message.guild.id, "false"));
+      await db.Guild.updateOne(
+        { guildID: guildId },
+        { suggestChannelID: "false" }
+      );
+      bot.log.query("write", "Writing to Guild " + guildId);
       await bot.function.reply.success(message, "Suggestion is disabled");
     } else {
       let channel = args.getChannel("channel");
@@ -37,9 +42,13 @@ module.exports = {
           message,
           "Missing a channel to deploy the suggestion"
         );
-      channel = message.guild.channels.cache.get(channel.id);
+      channel = guild.channels.cache.get(channel.id);
       if (!channel) bot.function.reply.error(message, "No such channel");
-      db.query(bot.queries.editSuggestionChannel(message.guildId, channel.id));
+      await db.Guild.updateOne(
+        { guildID: guildId },
+        { suggestChannelID: channel.id }
+      );
+      bot.log.query("write", "Writing to Guild " + guildId);
 
       await bot.function.reply.success(
         message,

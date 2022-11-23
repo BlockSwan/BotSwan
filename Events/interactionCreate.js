@@ -38,6 +38,7 @@ module.exports = async (bot, interaction) => {
           : choices.map((c) => ({ name: c, value: c }))
       );
     }
+    //  bot.log.command(interaction);
   }
 
   if (interaction.type === Discord.InteractionType.ApplicationCommand) {
@@ -53,11 +54,22 @@ module.exports = async (bot, interaction) => {
   if (interaction.isButton()) {
     let id = interaction.customId;
     if (["member", "bug", "discord", "other"].includes(id)) id = "newticket";
-    if (
+    else if (
       ["closeTicket", "lockTicket", "unlockTicket", "transcript"].includes(id)
     )
       id = "ticketactions";
+    else if (id.includes("mainRole-")) {
+      id = "mainRole";
+    }
+
+    console.log(id);
     let command = require(`../Generators/Buttons/${id}.js`);
+    if (command) command.run(bot, interaction, bot.db);
+  }
+
+  if (interaction.isSelectMenu()) {
+    let id = interaction.customId;
+    let command = require(`../Generators/Selects/${id}.js`);
     if (command) command.run(bot, interaction, bot.db);
   }
 };

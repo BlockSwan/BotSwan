@@ -1,20 +1,23 @@
 require("dotenv").config();
-
+const Logger = require("./Class/Logger");
 const Discord = require("discord.js");
-const intents = new Discord.IntentsBitField(3276799);
-const bot = new Discord.Client({ intents });
+
 const loadCommands = require("./Loaders/loadCommands");
 const loadEvents = require("./Loaders/loadEvents");
 
+const intents = new Discord.IntentsBitField(3276799);
+const bot = new Discord.Client({ intents });
+
+let logger = new Logger();
+
 bot.commands = new Discord.Collection();
+bot.log = logger;
 bot.function = {
   createID: require("./Functions/createID"),
   generateCaptcha: require("./Functions/generateCaptcha"),
   calculXp: require("./Functions/calculXp"),
-  queries: require("./queries"),
   reply: require("./Functions/reply"),
 };
-bot.queries = require("./queries");
 
 bot.theme = {
   colors: require("./Theme/colors"),
@@ -24,4 +27,5 @@ bot.color = "#ffffff";
 bot.login(process.env.TOKEN_BOT);
 loadCommands(bot);
 loadEvents(bot);
-console.log("Success Connect");
+
+bot.log.success("Successfuly Loaded!");

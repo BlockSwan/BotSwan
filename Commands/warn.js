@@ -24,9 +24,11 @@ module.exports = {
   ],
 
   async run(bot, message, args, db) {
+    let { guild, guildId } = message;
+
     let user = args.getUser("member");
     if (!user) return message.reply("No member to warn");
-    let member = message.guild.members.cache.get(user.id);
+    let member = guild.members.cache.get(user.id);
     if (!member) return message.reply("No member to warn");
 
     let reason = args.getString("reason");
@@ -35,7 +37,7 @@ module.exports = {
     if (message.user.id === user?.id)
       return bot.function.reply.error(message, "Can't warn yourself");
 
-    if ((await message.guild.fetchOwner()).id === user.id)
+    if ((await guild.fetchOwner()).id === user.id)
       return bot.function.reply.error(message, "Can't warn server owner");
 
     if (
@@ -43,7 +45,7 @@ module.exports = {
     )
       return bot.function.reply.error(message, "Can't warn this user ");
     if (
-      (await message.guild.members.fetchMe()).roles.highest.comparePositionTo(
+      (await guild.members.fetchMe()).roles.highest.comparePositionTo(
         member.roles.highest
       ) <= 0
     )
@@ -62,14 +64,7 @@ module.exports = {
 
     let ID = await bot.function.createID("WARN");
 
-    let saveWarn = bot.function.queries.saveWarn(
-      message.guild.id,
-      user.id,
-      message.user.id,
-      ID,
-      reason.replace(/'/g, "\\'"),
-      Date.now()
-    );
-    db.query(saveWarn);
+    await db.Warn.initWarn(message, user, ID, reason);
+    bot.log.query("write", "CREATING " + ID);
   },
 };
