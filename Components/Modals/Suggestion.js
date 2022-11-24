@@ -19,13 +19,6 @@ module.exports = () => {
           .setMinLength(10)
           .setCustomId("suggestionContent")
           .setStyle(Discord.TextInputStyle.Paragraph)
-      ),
-      new Discord.ActionRowBuilder().setComponents(
-        new Discord.TextInputBuilder()
-          .setLabel("Tell us everything below:")
-          .setMinLength(10)
-          .setCustomId("stest")
-          .setStyle(Discord.TextInputStyle.Paragraph)
       )
     );
   return modal;
