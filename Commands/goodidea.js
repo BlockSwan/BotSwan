@@ -1,5 +1,6 @@
 const Discord = require("discord.js");
 const { emoji } = require("../constants");
+const GoodIdeaBtn = require("../Components/Buttons/GoodIdea");
 
 module.exports = {
   name: "goodidea",
@@ -20,17 +21,11 @@ module.exports = {
         "Suggestion not `on`, please refer to `/setsuggest` if you are the server owner"
       );
     } else {
-      const Button = new Discord.ActionRowBuilder().setComponents(
-        new Discord.ButtonBuilder()
-          .setCustomId("goodIdea")
-          .setLabel("New proposition")
-          .setStyle(Discord.ButtonStyle.Primary)
-          .setEmoji("🧠")
-      );
+      const GoodIdea = GoodIdeaBtn();
 
       await message.reply({
-        content: `Does anyone have a good idea for **${emoji} Blockswan** ?`,
-        components: [Button],
+        content: GoodIdea.content,
+        components: [GoodIdea.button],
       });
     }
   },

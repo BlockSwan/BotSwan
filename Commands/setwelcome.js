@@ -1,10 +1,8 @@
 const Discord = require("discord.js");
-const { emoji } = require("../constants");
-const GoodIdeaBtn = require("../Components/Buttons/GoodIdea");
 
 module.exports = {
-  name: "setsuggest",
-  description: "Set the suggestion channel",
+  name: "setwelcome",
+  description: "Set the welcome channel",
   permission: Discord.PermissionFlagsBits.ManageGuild,
   dm: false,
   category: "Administration",
@@ -12,14 +10,14 @@ module.exports = {
     {
       type: "string",
       name: "state",
-      description: "State of the suggestion",
+      description: "State of the welcome",
       required: true,
       autocomplete: true,
     },
     {
       type: "channel",
       name: "channel",
-      description: "The suggestion channel",
+      description: "The welcome channel",
       required: false,
       autocomplete: false,
     },
@@ -33,43 +31,29 @@ module.exports = {
     if (state === "off") {
       await db.Guild.updateOne(
         { guildID: guildId },
-        { suggestChannelID: "false" }
+        { welcomeChannelID: "false" }
       );
       bot.log.query("write", "Writing to Guild " + guildId);
-      await bot.function.reply.success(message, "Suggestion is disabled");
+      await bot.function.reply.success(message, "welcome is disabled");
     } else {
       let channel = args.getChannel("channel");
       if (!channel)
         return bot.function.reply.error(
           message,
-          "Missing a channel to deploy the suggestion"
+          "Missing a channel to deploy the welcome"
         );
       channel = guild.channels.cache.get(channel.id);
       if (!channel) bot.function.reply.error(message, "No such channel");
       await db.Guild.updateOne(
         { guildID: guildId },
-        { suggestChannelID: channel.id }
+        { welcomeChannelID: channel.id }
       );
       bot.log.query("write", "Writing to Guild " + guildId);
 
       await bot.function.reply.success(
         message,
-        `Suggestion is enable in the channel ${channel}`
+        `Welcome is enable in the channel ${channel}`
       );
-
-      let embed = new Discord.EmbedBuilder()
-        .setColor("Aqua")
-        .setDescription(
-          `Help us to improve **${emoji} Blockswan** by suggesting us some channe change, app and protocol ideas, or whatever you think will be good! 🤝\n\n To open a suggestion, just use the \`/suggest\` command and write your message in the modal. If you believe somone has a good idea, you can also use \`/goodidea\`!\n\n You can approve or reject the members suggestion!\nWe can't wait to read you! 👋`
-        );
-
-      const GoodIdea = GoodIdeaBtn();
-
-      await channel.send({
-        embeds: [embed],
-        content: GoodIdea.content,
-        components: [GoodIdea.button],
-      });
     }
   },
 };

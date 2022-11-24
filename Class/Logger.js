@@ -54,4 +54,8 @@ module.exports = class Logger {
       this.Reset
     );
   }
+
+  ready() {
+    console.log("BOTSWAN IS FUCK*NG READY");
+  }
 };

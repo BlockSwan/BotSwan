@@ -30,6 +30,7 @@ module.exports = class Card {
     this.level = null;
     this.need = null;
     this.xp = null;
+    this.invite = null;
     this.colorFont = null;
     this.colorProgressBar = null;
   }
@@ -49,6 +50,11 @@ module.exports = class Card {
 
   setGuild(value) {
     this.guild = value;
+    return this;
+  }
+
+  setInvite(value) {
+    this.invite = value;
     return this;
   }
 
@@ -233,8 +239,12 @@ module.exports = class Card {
     //Level + Rang
     ctx.font = '36px "Saira"';
     ctx.fillStyle = this.colorFont;
-    ctx.fillText(`Level ${this.level}`, 275, 160);
-    this.rank = ctx.fillText(`Rank ${this.rank}#`, 520, 160);
+    ctx.fillText(
+      `lvl ${this.level} - ${this.invite} inv(s) - rank #${this.rank}`,
+      275,
+      160
+    );
+    //  this.rank = ctx.fillText(`rank ${this.rank}#`, 520, 160);
 
     //Tag de l'utilisateur
     ctx.font = '36px "Saira"';

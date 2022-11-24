@@ -10,6 +10,7 @@ module.exports = async (bot) => {
     const url = "https://twitter.com/user/status/" + tweet?.id;
     db = bot.db;
     let res = await db.Guild.getTwitterChannels();
+    console.log(res);
 
     try {
       for (let i = 0; i < res?.length; i++) {

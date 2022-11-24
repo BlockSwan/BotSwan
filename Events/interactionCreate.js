@@ -20,6 +20,7 @@ module.exports = async (bot, interaction) => {
         "setlevel",
         "setticket",
         "settwitter",
+        "setwelcome",
       ].includes(interaction.commandName)
     ) {
       let choices = ["on", "off"];

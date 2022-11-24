@@ -19,6 +19,7 @@ module.exports = {
 
   async run(bot, message, args, db) {
     const { guild, guildId } = message;
+
     let user;
     if (args.getUser("member")) {
       user = args.getUser("member");
@@ -51,6 +52,7 @@ module.exports = {
       bot.log.query("read", "READing USER RANK FOR " + user.id);
 
       let Stats = bot.function.calculXp(userXP);
+      let inviteCount = await db.User.getUserInvitation(guildId, user.id);
 
       let Card = await new Rank()
         .setBackground("/Assets/imgs/rank_background.png")
@@ -63,6 +65,7 @@ module.exports = {
         .setXp(Stats.xp.gained)
         .setLevel(Stats.lvl)
         .setXpNeed(Stats.xp.needed)
+        .setInvite(inviteCount)
         .toCard();
 
       await message.followUp({

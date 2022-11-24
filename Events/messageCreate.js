@@ -15,6 +15,8 @@ module.exports = async (bot, message) => {
   if (!guildData) {
     await db.Guild.initGuild(guild);
     bot.log.query("write", "Adding Guild");
+  } else if (guildData.isDelete) {
+    await db.Guild.updateOne({ guildID: guild.id }, { isDelete: false });
   }
 
   let user = await db.User.findOne({
@@ -24,10 +26,7 @@ module.exports = async (bot, message) => {
   bot.log.query("read", "Reading Guild " + guild.id);
 
   if (!user) {
-    await db.User.create({
-      discordID: author.id,
-      guildID: guild.id,
-    });
+    await db.User.initUser(author.id, guild.id, "none");
     bot.log.query("write", "CREATING NEW USER" + author.id);
   } else {
     let xpToGive = Math.floor(Math.random() * MAX_XP_PER_MSG);
@@ -49,7 +48,7 @@ module.exports = async (bot, message) => {
       );
       if (levelChannel) {
         await levelChannel.send(
-          `GG ${author}! You are now level \`${xp.lvl}\` and cumulating \`${xp.xp.current}\`xp`
+          `GG ${author}! You are now level \`${xp.lvl}\` and cumulating \`${xp.xp.current}\`xp. Check your rank with \`/rank\``
         );
       }
     }

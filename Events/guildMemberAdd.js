@@ -5,13 +5,53 @@ module.exports = async (bot, member) => {
   const { guild, user } = member;
   let db = bot.db;
 
+  let invite = await bot.function.getInvite(bot, member);
+
   let guildData = await db.Guild.findOne({ guildID: guild.id });
+
+  if (!guildData) {
+    await db.Guild.initGuild(guild);
+  }
+
+  let newMember = await db.User.findOne({
+    guildID: guild.id,
+    discordID: user.id,
+  });
+
+  if (!newMember)
+    await db.User.initUser(user.id, guild.id, invite?.inviter?.id || "none");
+  else {
+    await db.User.updateMembershipAndInviter(
+      user.id,
+      guild.id,
+      true,
+      invite?.inviter?.id || "none"
+    );
+  }
+
+  let visitorCount = await db.User.getUniqueVisitorCount(guild.id);
+
+  let welcomeChannel = guild.channels.cache.get(guildData?.welcomeChannelID);
+
   if (
-    !guildData ||
-    Boolean(guildData.captchaChannelID === false) ||
-    Boolean(guildData.verifiedRoleID === false)
-  )
+    (guildData.captchaChannelID === "false" ||
+      guildData.verifiedRoleID === "false") &&
+    !welcomeChannel
+  ) {
     return;
+  } else if (
+    (guildData.captchaChannelID === "false" ||
+      guildData.verifiedRoleID === "false") &&
+    welcomeChannel
+  ) {
+    return await bot.function.createWelcomeCard(
+      guild,
+      user,
+      welcomeChannel,
+      visitorCount,
+      invite
+    );
+  }
 
   let channel = guild.channels.cache.get(guildData.captchaChannelID);
   let verifiedRole = member.guild.roles.cache.get(guildData.verifiedRoleID);
@@ -53,6 +93,15 @@ module.exports = async (bot, member) => {
       } catch (err) {}
       await channel.permissionOverwrites.delete(user.id);
       member.roles.add(verifiedRole);
+      if (welcomeChannel) {
+        await bot.function.createWelcomeCard(
+          guild,
+          user,
+          welcomeChannel,
+          visitorCount,
+          invite
+        );
+      }
       //db.query
 
       // const newInvites = await member.guild.invites.fetch();
@@ -81,6 +130,7 @@ module.exports = async (bot, member) => {
       } catch (err) {}
       await channel.permissionOverwrites.delete(user.id);
       await member.kick("Captcha failed");
+      await db.User.updateMembership(user.id, guild.id, false);
     }
   } catch (err) {
     await msg.delete();
@@ -91,5 +141,6 @@ module.exports = async (bot, member) => {
     } catch (err) {}
     await channel.permissionOverwrites.delete(user.id);
     await member.kick("Captcha not filled");
+    await db.User.updateMembership(user.id, guild.id, false);
   }
 };
