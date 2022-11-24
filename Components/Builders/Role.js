@@ -13,8 +13,8 @@ module.exports = (message, roles) => {
     return {
       label: role.name,
       value: role.id,
-      description: x.roleDescription,
-      emoji: x.roleEmoji || undefined,
+      description: x.description,
+      emoji: x.emoji || undefined,
     };
   });
 
